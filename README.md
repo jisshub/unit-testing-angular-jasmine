@@ -1,27 +1,249 @@
-# TestingDemoApp
+## Unit Testing
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.0.5.
+Unit testing files ends with _.spec.ts_ extension.
 
-## Development server
+V use jasmine as our testing framework.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Use two functions
 
-## Code scaffolding
+- _describe()_ to define a group of related test or a suite.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- _it()_ to define a test/spec.
 
-## Build
+**compute.ts**
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+```ts
+export const compute = (number: number) => {
+  if (number < 0) {
+    return 0;
+  }
+  return number + 1;
+};
+```
 
-## Running unit tests
+**compute.spec.ts**
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+```ts
+import { compute } from "./compute";
+describe("compute", () => {
+  it("Should return 0 if input is negative", () => {
+    const result = compute(-1);
+    expect(result).toBe(0);
+  });
+  it("Should increment the input if it is positive", () => {
+    const result = compute(10);
+    expect(result).toBe(11);
+  });
+});
+```
 
-## Running end-to-end tests
+---
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+## Working with arrays and strings.
 
-## Further help
+**greet.ts**
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```ts
+export function greet(name: string) {
+  return `welcome ${name}!`;
+}
+```
+
+**greet.spec.ts**
+
+```ts
+describe("greet", () => {
+  it("Should return a string", () => {
+    expect(greet("jissmon")).toContain("jissmon");
+  });
+});
+```
+
+- In above test, v just consider about passed value. ie name property. expected value should contain name as 'jissmon'.
+
+### Test on Arrays
+
+**getCurrencies.ts**
+
+```ts
+export const getCurrencies = () => {
+  return ["INR", "AUD", "CAD"];
+};
+```
+
+**getCurrencies.spec.ts**
+
+```ts
+describe("getCurrencies", () => {
+  it("should return supported currenices", () => {
+    const result = getCurrencies();
+    expect(result).toContain("AUD");
+    expect(result).toContain("CAD");
+    expect(result).toContain("INR");
+  });
+});
+```
+
+- here expected result should contain the same currencies as it's in array. but result no need to be in correct order.
+
+## Testing components
+
+**vote.component.ts**
+
+```ts
+export class VoteComponent {
+  totalVotes = 0;
+  upVotes() {
+    this.totalVotes++;
+  }
+  downVotes() {
+    this.totalVotes--;
+  }
+}
+```
+
+**vote.component.spec.ts**
+
+```ts
+describe("VoteComponent", () => {
+  // Arrange
+  let vote = new VoteComponent();
+
+  it("Vote count should increment on upVote", () => {
+    // Act
+    vote.upVotes();
+
+    // Assert
+    expect(vote.totalVotes).toBe(1);
+  });
+  it("Vote count should decrement on downVote", () => {
+    vote.downVotes();
+
+    expect(vote.totalVotes).toBe(-1);
+  });
+});
+```
+
+### 3A's of Unit test
+
+- Arrange : initializing a component
+- Act : calling a method/function in component
+- Assert:
+
+when v run an automated test it should in an isolated world.
+
+- so v have to initialize the component before each test,
+
+- **beforeEach()** - exceuted before each test
+
+- **afterEach()** - exceuted after each test
+
+- **beforeAll()** - executed once before all test.
+
+- **afterAll()** - executed once after all test.
+
+**vote.compoenent.spec.ts**
+
+```ts
+describe("VoteComponent", () => {
+  // Set type
+  let vote: VoteComponent;
+
+  beforeEach(() => {
+    // initialize the component before each test.
+    vote = new VoteComponent();
+  });
+
+  it("Vote count should increment on upVote", () => {
+    vote.upVotes();
+
+    expect(vote.totalVotes).toBe(1);
+  });
+  it("Vote count should decrement on downVote", () => {
+    vote.downVotes();
+
+    expect(vote.totalVotes).toBe(-1);
+  });
+});
+```
+
+## Working With Forms
+
+**todo-form.component.ts**
+
+```ts
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+
+export class TodoFormComponent {
+  form: FormGroup;
+
+  constructor(fb: FormBuilder) {
+    this.form = fb.group({
+      name: ["", Validators.required],
+      email: [""],
+    });
+  }
+}
+```
+
+**todo-form.component.spec.ts**
+
+```ts
+describe("TodoFormComponent", () => {
+  // set type
+  let todo: TodoFormComponent;
+
+  beforeEach(() => {
+    todo = new TodoFormComponent(new FormBuilder());
+  });
+  it("Should create a form with 2 controls", () => {
+    expect(todo.form.contains("name")).toBeTruthy();
+    expect(todo.form.contains("email")).toBeTruthy();
+  });
+  it("Should make the name control required", () => {
+    let control = todo.form.get("name");
+    control?.setValue("");
+    expect(control?.valid).toBeFalsy();
+  });
+});
+```
+
+## Working with event emitters
+
+**vote.component.ts**
+
+```ts
+export class VoteComponent {
+  totalVotes = 0;
+  voteChanges = new EventEmitter();
+  upVotes() {
+    this.totalVotes++;
+    this.voteChanges.emit(this.totalVotes);
+  }
+}
+```
+
+**vote.component.spec.ts**
+
+```ts
+describe("VoteComponent", () => {
+  // Set type
+  let vote: VoteComponent;
+
+  beforeEach(() => {
+    // initialize the component before each test.
+    vote = new VoteComponent();
+  });
+
+  it("Should raise voteChanged event when up voted", () => {
+    let totalVotes = null;
+    vote.voteChanges.subscribe((tv: any) => (totalVotes = tv));
+
+    vote.upVotes();
+
+    expect(totalVotes).not.toBe(null);
+  });
+});
+```
+
+---
