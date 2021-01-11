@@ -246,4 +246,78 @@ describe("VoteComponent", () => {
 });
 ```
 
+## Working with Components that uses Services
+
+calling service on getTodos method which returns an observable, subscribe to the observable and initialize the todos property. so in our unit test, v call ngOnInIt and have to assert the whether todos property is initialized. but v wont use services, since it make calls to the backend and is against the definition of the unit test. because in unit test we wont touch the db, or call backend services.
+
+so in unit test, v give this component a fake services and it won't make backend calls. it just returns a simple observable.
+
+change the implementation of getTodos method. v use a function in jasmine called _spyOn()_. using this, we get control over a method in the class.
+
+getTodos() is a method with no parameters & returns an observable.
+so in callFake() v return an observable.
+
+```ts
+it("Should set todos property with items returned from service", () => {
+  spyOn(todoService, "getTodos").and.callFake(() => {
+    return Observable;
+  });
+});
+```
+
+Here, v can create an observable from an array.
+
+```ts
+it('Should set todos property with items returned from service', ()=>{
+  spyOn(todoService, 'getTodos').and.callFake(() =>{
+      return Observable.from([[1,2,3]]);
+  })
+```
+
+```ts
+it("Should set todos property with items returned from service", () => {
+  let todosArray = [1, 2, 3];
+  spyOn(todoService, "getTodos").and.callFake(() => {
+    return Observable.from([todosArray]);
+  });
+
+  // Act
+  todosComp.ngOnInit();
+
+  // Assert
+  expect(todosComp.todos).toBe(todosArray);
+});
+```
+
+**todos.component.spec.ts**
+
+```ts
+import { Observable } from "rxjs/observable";
+import { TodoService } from "./todo.service";
+import { TodosComponent } from "./todos.component";
+import "rxjs/add/observable/from";
+
+describe("TodosComponent", () => {
+  let todosComp: TodosComponent;
+  let todoService: TodoService;
+
+  beforeEach(() => {
+    todoService = new TodoService(null);
+    todosComp = new TodosComponent(todoService);
+  });
+  it("Should set todos property with items returned from service", () => {
+    let todosArray = [1, 2, 3];
+    spyOn(todoService, "getTodos").and.callFake(() => {
+      return Observable.from([todosArray]);
+    });
+
+    // Act
+    todosComp.ngOnInit();
+
+    // Assert
+    expect(todosComp.todos).toBe(todosArray);
+  });
+});
+```
+
 ---
